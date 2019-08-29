@@ -1,37 +1,89 @@
 <template>
-  <v-app>
-    <v-app-bar app>
-      <v-toolbar-title class="headline text-uppercase">
-        <span>Vuetify</span>
-        <span class="font-weight-light">MATERIAL DESIGN</span>
-      </v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn
-        text
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
+  <v-app id="inspire">
+    <v-navigation-drawer
+      v-model="drawer"
+      app
+      clipped
+    >
+      <v-list
+        rounded=""
+        dense
       >
-        <span class="mr-2">Latest Release</span>
-      </v-btn>
+        <v-list-item-group v-model="currentItem">
+          <v-list-item
+            class="mt-4"
+            @click="routeTo('add-customer');"
+            key="add-customer"
+            color="primary"
+          >
+            <v-list-item-action>
+              <v-icon color="grey darken-1">mdi-account-multiple-plus</v-icon>
+            </v-list-item-action>
+            <v-list-item-title class="grey--text text--darken-1">Add Customer Details</v-list-item-title>
+          </v-list-item>
+          <div style="height: 8px;"></div>
+          <v-list-item
+            @click="routeTo('view-orders');"
+            key="view-orders"
+            color="primary"
+          >
+            <v-list-item-action>
+              <v-icon color="grey darken-1">mdi-checkbox-multiple-marked</v-icon>
+            </v-list-item-action>
+            <v-list-item-title class="grey--text text--darken-1">View Orders</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item
+            @click="routeTo('add-order');"
+            key="add-order"
+            color="primary"
+          >
+            <v-list-item-action>
+              <v-icon color="grey darken-1">mdi-cart-plus</v-icon>
+            </v-list-item-action>
+            <v-list-item-title class="grey--text text--darken-1">Add New Order</v-list-item-title>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-app-bar
+      app
+      clipped-left=""
+      elevate-on-scroll=""
+      color="white"
+    >
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-toolbar-title class="mr-12 align-center">
+        <span class="title">Tailor Shop</span>
+      </v-toolbar-title>
+
     </v-app-bar>
 
     <v-content>
-      <HelloWorld/>
+
+      <router-view></router-view>
+
     </v-content>
   </v-app>
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import Vue from "vue";
 
 export default Vue.extend({
-  name: 'App',
-  components: {
-    HelloWorld,
-  },
+  name: "App",
+  components: {},
   data: () => ({
+    drawer: true,
+    currentItem: "view-orders"
     //
   }),
+  methods: {
+    routeTo(item: string) {
+      this.$router.replace(item);
+      this.currentItem = item;
+    }
+  }
 });
 </script>
