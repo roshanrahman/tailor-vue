@@ -152,11 +152,11 @@ export default {
         console.log('Returned from mutation', data);
         this.isMutationOngoing = false;
         if (!!data.errors) {
-          this.$refs.customerForm.reset();
-          this.isSuccessDialogVisible = true;
-        } else {
           this.isErrorDialogVisible = true;
           this.errorString = data.data.createCustomer.error.message;
+        } else {
+          this.$refs.customerForm.reset();
+          this.isSuccessDialogVisible = true;
         }
 
       });

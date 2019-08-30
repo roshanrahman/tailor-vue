@@ -74,6 +74,12 @@ import Vue from "vue";
 export default Vue.extend({
   name: "App",
   components: {},
+  mounted() {
+    localStorage.setItem(
+      "apollo-token",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRjODI1ODFhLWNmZGMtNDhmZi1iYjEwLWFjYjRjODZkNWI3OCIsImlhdCI6MTU2NzA5NTQ3M30.JSfJ8jAYBT2Kj1aFSLL21cBEfnK1bbJPnUQCUGtJXHM"
+    );
+  },
   data: () => ({
     drawer: true,
     currentItem: "view-orders"

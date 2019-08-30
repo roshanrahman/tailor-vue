@@ -27,11 +27,17 @@ let createCustomerMutation = gql`
 `;
 
 let addOrderMutation = gql`
-  mutation($measurement: String, $totalAmount: Float, $type: String) {
+  mutation(
+    $measurement: String
+    $totalAmount: Float
+    $type: String
+    $customerId: String
+  ) {
     addOrder(
       measurement: $measurement
       totalAmount: $totalAmount
       type: $type
+      customerId: $customerId
     ) {
       error {
         message

@@ -14,6 +14,14 @@
         <h2 class="subtitle-1">Fill in the details and submit to create new order.</h2>
         <v-divider class="my-4"></v-divider>
         <v-form ref="customerForm">
+          <h1 class="title mb-4">Select Customer</h1>
+          <v-overflow-btn
+            solo
+            v-model="selectedCustomerId"
+            item-text="name"
+            item-value="id"
+            :items="viewCustomers.customers"
+          ></v-overflow-btn>
           <h1 class="title mb-4">Garment Type</h1>
           <v-overflow-btn
             solo
@@ -165,10 +173,19 @@
 
 <script>
 import { createCustomerMutation, addOrderMutation } from "../graphql/mutations";
+import { viewCustomers } from "../graphql/queries";
+
 export default {
+  apollo: {
+    viewCustomers: {
+      query: viewCustomers,
+    }
+  },
   data () {
     return {
+      viewCustomers: [],
       errorString: '',
+      selectedCustomerId: 1,
       garmentTypes: ['Shirt', 'Pants'],
       selectedGarmentType: 'Shirt',
       shirtImages: [
@@ -226,19 +243,20 @@ export default {
           variables: {
             measurement: measurementsString,
             totalAmount: this.costInput,
-            type: this.selectedGarmentType
+            type: this.selectedGarmentType,
+            customerId: this.selectedCustomerId
           },
 
         }
       ).then((data) => {
         console.log('Returned from mutation', data);
         this.isMutationOngoing = false;
-        if (!!data.errors) {
-          this.$refs.customerForm.reset();
-          this.isSuccessDialogVisible = true;
-        } else {
+        if (!!data.data.addOrder.error || !!data.errors) {
           this.isErrorDialogVisible = true;
           this.errorString = data.data.addOrder.error.message;
+        } else {
+          this.$refs.customerForm.reset();
+          this.isSuccessDialogVisible = true;
         }
 
       });
