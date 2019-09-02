@@ -51,7 +51,9 @@
       app
       clipped-left=""
       elevate-on-scroll=""
-      color="white"
+      color="primary"
+      dark
+      dense
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title class="mr-12 align-center">
@@ -62,7 +64,7 @@
 
     <v-content>
 
-      <router-view></router-view>
+      <router-view v-on:routeChangedFromExternal="setCurrentItem"></router-view>
 
     </v-content>
   </v-app>
@@ -89,6 +91,11 @@ export default Vue.extend({
     routeTo(item: string) {
       this.$router.replace(item);
       this.currentItem = item;
+    },
+    setCurrentItem(event) {
+      console.log("Sent from event", event);
+      const { value } = event;
+      this.currentItem = "add-order";
     }
   }
 });

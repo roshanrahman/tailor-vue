@@ -52,4 +52,20 @@ let addOrderMutation = gql`
   }
 `;
 
-export { createCustomerMutation, addOrderMutation };
+let deleteOrderMutation = gql`
+  mutation($orderId: String) {
+    deleteOrder(orderId: $orderId) {
+      error {
+        message
+      }
+      orders {
+        id
+        orderNo
+        totalAmount
+        measurement
+      }
+    }
+  }
+`;
+
+export { createCustomerMutation, addOrderMutation, deleteOrderMutation };

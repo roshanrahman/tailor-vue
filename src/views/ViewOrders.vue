@@ -6,13 +6,70 @@
     >
       <v-col
         cols="12"
-        lg="8"
+        lg="10"
         sm="12"
       >
+        <v-row class="mb-8">
 
-        <h1 class="display-1 primary--text">Add new order </h1>
-        <h2 class="subtitle-1">Fill in the details and submit to create new order.</h2>
-        <v-divider class="my-4"></v-divider>
+          <h1 class="display-1 primary--text">View Orders </h1>
+          <v-spacer></v-spacer>
+          <v-btn
+            @click="routeToAddOrder()"
+            color="primary"
+            elevation="0"
+          >New Order</v-btn>
+        </v-row>
+        <v-data-table
+          :items="viewOrders.orders"
+          :headers="headers"
+        >
+
+          <template v-slot:item.totalAmount="{ item }">
+            Rs. {{ item.totalAmount }}
+          </template>
+          <template v-slot:item.action="{ item }">
+            <v-icon
+              small
+              class="mr-2"
+              @click="editItem(item)"
+            >
+              mdi-pencil
+            </v-icon>
+            <v-icon
+              small
+              @click="deleteItem(item)"
+            >
+              mdi-delete
+            </v-icon>
+          </template>
+          <template v-slot:item.measurement="{ item }">
+            <v-btn
+              outlined
+              rounded
+              @click="showOrderDetails(item);"
+              small=""
+              text=""
+              color="primary"
+            >View Measurement</v-btn>
+          </template>
+        </v-data-table>
+      </v-col>
+    </v-row>
+    <v-dialog
+      v-model="isEditDialogVisible"
+      fullscreen=""
+    >
+      <v-card class="pa-8">
+        <v-row>
+          <v-btn
+            icon=""
+            color="primary"
+            @click="isEditDialogVisible = false;"
+          >
+            <v-icon>mdi-arrow-left</v-icon>
+          </v-btn>
+        </v-row>
+        <h1 class="headline text-center primary--text">Edit Order</h1>
         <v-form ref="customerForm">
           <h1 class="title mb-4">Select Customer</h1>
           <v-overflow-btn
@@ -118,6 +175,12 @@
           <v-row justify="end">
             <v-btn
               class="ma-4"
+              outlined
+              text
+              @click="isEditDialogVisible = false;"
+            >Cancel</v-btn>
+            <v-btn
+              class="ma-4"
               color="primary"
               :disabled="!isAllFieldsValidated"
               :loading="isMutationOngoing"
@@ -126,21 +189,38 @@
             <v-spacer></v-spacer>
           </v-row>
         </v-form>
-        <v-spacer class="my-6"></v-spacer>
 
-      </v-col>
-    </v-row>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="isOrderDetailsDialogVisible"
+      max-width="600"
+    >
+      <v-card class="pa-8">
+        <v-row>
+          <v-btn
+            icon=""
+            color="primary"
+            @click="isOrderDetailsDialogVisible = false;"
+          >
+            <v-icon>mdi-arrow-left</v-icon>
+          </v-btn>
+        </v-row>
+        <OrderDetails :orderData="currentOrder"></OrderDetails>
+      </v-card>
+    </v-dialog>
     <v-dialog
       max-width="400"
       v-model="isSuccessDialogVisible"
     >
       <v-card>
-        <v-card-title>Order Added Successfully</v-card-title>
+        <v-card-title>Customer Added Successfully</v-card-title>
         <v-card-text>
-          The order details were successfully added to the database.
+          The customer details were successfully added to the database.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
+
           <v-btn
             color="green"
             text
@@ -168,18 +248,71 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog
+      max-width="400"
+      v-model="isDeleteDialogVisible"
+    >
+      <v-card>
+        <v-card-title class="red--text darken-1">Are you sure you want to delete this order?</v-card-title>
+        <v-card-text>
+          You cannot undo this operation.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="isDeleteDialogVisible = false;"
+          >Cancel</v-btn>
+          <v-btn
+            color="red darken-1"
+            text
+            outlined=""
+            @click="performDeleteMutation();"
+          >Delete</v-btn>
+
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </v-content>
 </template>
 
 <script>
-import { createCustomerMutation, addOrderMutation } from "../graphql/mutations";
-import { viewCustomers } from "../graphql/queries";
-import { ShirtMeasurementType, PantsMeasurementType } from '../measurements/measurements';
-
+import { ShirtMeasurementType } from "../measurements/measurements";
+import { viewOrders } from "../graphql/queries";
+import { deleteOrderMutation } from '../graphql/mutations';
+import OrderDetails from "../components/OrderDetails";
 export default {
-  apollo: {
-    viewCustomers: {
-      query: viewCustomers,
+  mounted () {
+  },
+  components: {
+    OrderDetails
+  },
+  methods: {
+    routeToAddOrder () {
+      this.$router.replace("add-order");
+      this.$emit('routeChangedFromExternal', 'add-order');
+    },
+    editItem (item) {
+      this.isEditDialogVisible = true;
+    },
+    deleteItem (item) {
+      this.orderIdForDeletion = item.id;
+      this.isDeleteDialogVisible = true;
+    },
+    performDeleteMutation () {
+      this.$apollo.mutate({
+        mutation: deleteOrderMutation,
+        variables: {
+          orderId: this.orderIdForDeletion
+        }
+      });
+      this.isDeleteDialogVisible = false;
+      this.$apollo.queries.viewOrders.refetch();
+    },
+    showOrderDetails (item) {
+      this.currentOrder = item;
+      this.isOrderDetailsDialogVisible = true;
     }
   },
   data () {
@@ -187,6 +320,8 @@ export default {
       viewCustomers: [],
       errorString: '',
       selectedCustomerId: 1,
+      orderIdForDeletion: '',
+      currentOrder: {},
       garmentTypes: ['Shirt', 'Pants'],
       selectedGarmentType: 'Shirt',
       shirtImages: [
@@ -201,8 +336,6 @@ export default {
       ],
       currentCarouselItem: 0,
       isMutationOngoing: false,
-      isSuccessDialogVisible: false,
-      isErrorDialogVisible: false,
       formInputsForShirt: {
         shirtLengthInput: '',
         chestWidthInput: '',
@@ -213,69 +346,42 @@ export default {
         waistLengthInput: '',
       },
       costInput: null,
-    }
-  },
-  computed: {
-    isAllFieldsValidated: function () {
-      if (this.selectedGarmentType == 'Shirt') {
-        if (!!this.formInputsForShirt.shirtLengthInput &&
-          !!this.formInputsForShirt.chestWidthInput &&
-          !!this.formInputsForShirt.sleeveLengthInput && !!this.costInput) return true;
-        return false;
-      } else {
-        if (!!this.formInputsForPants.pantsLengthInput &&
-          !!this.formInputsForPants.waistLengthInput && !!this.costInput) return true;
-        return false;
-      }
-    }
-  },
-  methods: {
-    async sendMutation () {
-      this.isMutationOngoing = true;
-      var measurementsString = '';
-      var measurementObject = {};
-
-      if (this.selectedGarmentType == 'Shirt') {
-        measurementObject = new ShirtMeasurementType(
-          this.formInputsForShirt.shirtLengthInput,
-          this.formInputsForShirt.chestWidthInput,
-          this.formInputsForShirt.sleeveLengthInput
-        );
-        measurementsString = measurementObject.encodeToString();
-      } else {
-        measurementObject = new PantsMeasurementType(
-          this.formInputsForPants.pantsLengthInput,
-          this.formInputsForPants.waistLengthInput
-        );
-        measurementsString = measurementObject.encodeToString();
-      }
-      await this.$apollo.mutate(
+      isSuccessDialogVisible: false,
+      isErrorDialogVisible: false,
+      isEditDialogVisible: false,
+      isDeleteDialogVisible: false,
+      isOrderDetailsDialogVisible: false,
+      headers: [
         {
-          mutation: addOrderMutation,
-          variables: {
-            measurement: measurementsString,
-            totalAmount: this.costInput,
-            type: this.selectedGarmentType,
-            customerId: this.selectedCustomerId
-          },
-
+          text: 'Order No.',
+          value: 'orderNo'
+        },
+        {
+          text: 'Customer Name',
+          value: 'customer.name'
+        },
+        {
+          text: 'Total Amount (in Rs.)',
+          value: 'totalAmount'
+        },
+        {
+          text: 'Measurement',
+          value: 'measurement'
+        },
+        {
+          text: 'Actions',
+          value: 'action'
         }
-      ).then((data) => {
-        console.log('Returned from mutation', data);
-        this.isMutationOngoing = false;
-        if (!!data.data.addOrder.error || !!data.errors) {
-          this.isErrorDialogVisible = true;
-          this.errorString = data.data.addOrder.error.message;
-        } else {
-          this.$refs.customerForm.reset();
-          this.isSuccessDialogVisible = true;
-        }
-
-      });
-
+      ],
+      viewOrders: {},
+    }
+  },
+  apollo: {
+    viewOrders: {
+      query: viewOrders,
+      pollInterval: 5
     }
   }
-
 }
 </script>
 
