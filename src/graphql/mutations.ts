@@ -52,6 +52,32 @@ let addOrderMutation = gql`
   }
 `;
 
+let updateOrderMutation = gql`
+  mutation(
+    $measurement: String
+    $totalAmount: Float
+    $type: String
+    $orderId: String
+  ) {
+    updateOrder(
+      orderId: $orderId
+      totalAmount: $totalAmount
+      type: $type
+      measurement: $measurement
+    ) {
+      error {
+        message
+      }
+      orders {
+        id
+        orderNo
+        totalAmount
+        measurement
+      }
+    }
+  }
+`;
+
 let deleteOrderMutation = gql`
   mutation($orderId: String) {
     deleteOrder(orderId: $orderId) {
@@ -68,4 +94,9 @@ let deleteOrderMutation = gql`
   }
 `;
 
-export { createCustomerMutation, addOrderMutation, deleteOrderMutation };
+export {
+  createCustomerMutation,
+  addOrderMutation,
+  updateOrderMutation,
+  deleteOrderMutation
+};

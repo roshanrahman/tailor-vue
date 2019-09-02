@@ -22,6 +22,7 @@ export class ShirtMeasurementType {
   static fromJSON(json: string) {
     var object: any = {};
     object = JSON.parse(json);
+    console.log("Created shirt obj ", object);
     return new this(
       object.measurements[0].value,
       object.measurements[1].value,
@@ -48,6 +49,12 @@ export class PantsMeasurementType {
   constructor(pantsLength, waistLength) {
     this.pantsLength = pantsLength;
     this.waistLength = waistLength;
+  }
+  static fromJSON(json: string) {
+    var object: any = {};
+    object = JSON.parse(json);
+    console.log("Created pants obj ", object);
+    return new this(object.measurements[0].value, object.measurements[1].value);
   }
   encodeToString() {
     var object: any = {};

@@ -57,7 +57,7 @@
     </v-row>
     <v-dialog
       v-model="isEditDialogVisible"
-      fullscreen=""
+      max-width="600"
     >
       <v-card class="pa-8">
         <v-row>
@@ -184,8 +184,8 @@
               color="primary"
               :disabled="!isAllFieldsValidated"
               :loading="isMutationOngoing"
-              @click="sendMutation()"
-            >Create</v-btn>
+              @click="sendUpdateMutation()"
+            >Update</v-btn>
             <v-spacer></v-spacer>
           </v-row>
         </v-form>
@@ -214,9 +214,9 @@
       v-model="isSuccessDialogVisible"
     >
       <v-card>
-        <v-card-title>Customer Added Successfully</v-card-title>
+        <v-card-title>Order edited successfully</v-card-title>
         <v-card-text>
-          The customer details were successfully added to the database.
+          The customer details were successfully edited.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -278,9 +278,9 @@
 </template>
 
 <script>
-import { ShirtMeasurementType } from "../measurements/measurements";
-import { viewOrders } from "../graphql/queries";
-import { deleteOrderMutation } from '../graphql/mutations';
+import { ShirtMeasurementType, PantsMeasurementType } from "../measurements/measurements";
+import { viewOrders, viewCustomers } from "../graphql/queries";
+import { deleteOrderMutation, updateOrderMutation } from '../graphql/mutations';
 import OrderDetails from "../components/OrderDetails";
 export default {
   mounted () {
@@ -294,6 +294,24 @@ export default {
       this.$emit('routeChangedFromExternal', 'add-order');
     },
     editItem (item) {
+      this.currentOrder = item;
+
+      var measurementsObject = JSON.parse(item.measurement);
+      if (measurementsObject.type == 'Shirt') {
+        measurementsObject = ShirtMeasurementType.fromJSON(item.measurement);
+        this.formInputsForShirt.shirtLengthInput = measurementsObject.shirtLength;
+        this.formInputsForShirt.chestWidthInput = measurementsObject.chestWidth;
+        this.formInputsForShirt.sleeveLengthInput = measurementsObject.sleeveLength;
+        this.selectedGarmentType = 'Shirt';
+
+      } else {
+        measurementsObject = PantsMeasurementType.fromJSON(item.measurement);
+        this.formInputsForPants.pantsLengthInput = measurementsObject.pantsLength;
+        this.formInputsForPants.waistLengthInput = measurementsObject.waistLength;
+        this.selectedGarmentType = 'Pants';
+      }
+      this.costInput = item.totalAmount;
+      this.selectedCustomerId = item.customer.id;
       this.isEditDialogVisible = true;
     },
     deleteItem (item) {
@@ -313,6 +331,51 @@ export default {
     showOrderDetails (item) {
       this.currentOrder = item;
       this.isOrderDetailsDialogVisible = true;
+    },
+    async sendUpdateMutation () {
+      this.isMutationOngoing = true;
+      var measurementsString = '';
+      var measurementObject = {};
+
+      if (this.selectedGarmentType == 'Shirt') {
+        measurementObject = new ShirtMeasurementType(
+          this.formInputsForShirt.shirtLengthInput,
+          this.formInputsForShirt.chestWidthInput,
+          this.formInputsForShirt.sleeveLengthInput
+        );
+        measurementsString = measurementObject.encodeToString();
+      } else {
+        measurementObject = new PantsMeasurementType(
+          this.formInputsForPants.pantsLengthInput,
+          this.formInputsForPants.waistLengthInput
+        );
+        measurementsString = measurementObject.encodeToString();
+      }
+      await this.$apollo.mutate(
+        {
+          mutation: updateOrderMutation,
+          variables: {
+            measurement: measurementsString,
+            totalAmount: this.costInput,
+            type: this.selectedGarmentType,
+            orderId: this.currentOrder.id
+          },
+
+        }
+      ).then((data) => {
+        console.log('Returned from mutation', data);
+        this.isMutationOngoing = false;
+        if (!!data.data.updateOrder.error || !!data.errors) {
+          this.isErrorDialogVisible = true;
+          this.errorString = data.data.updateOrder.error.message;
+        } else {
+          this.$refs.customerForm.reset();
+          this.isEditDialogVisible = false;
+          this.isSuccessDialogVisible = true;
+        }
+
+      });
+
     }
   },
   data () {
@@ -380,6 +443,25 @@ export default {
     viewOrders: {
       query: viewOrders,
       pollInterval: 5
+    },
+
+    viewCustomers: {
+      query: viewCustomers,
+    }
+
+  },
+  computed: {
+    isAllFieldsValidated: function () {
+      if (this.selectedGarmentType == 'Shirt') {
+        if (!!this.formInputsForShirt.shirtLengthInput &&
+          !!this.formInputsForShirt.chestWidthInput &&
+          !!this.formInputsForShirt.sleeveLengthInput && !!this.costInput) return true;
+        return false;
+      } else {
+        if (!!this.formInputsForPants.pantsLengthInput &&
+          !!this.formInputsForPants.waistLengthInput && !!this.costInput) return true;
+        return false;
+      }
     }
   }
 }

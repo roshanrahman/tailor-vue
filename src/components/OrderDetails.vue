@@ -36,7 +36,6 @@
         </v-card-text>
       </v-card>
     </v-row>
-    <v-divider></v-divider>
     <v-row>
       <v-card
         outlined
